@@ -1,17 +1,7 @@
-PROMPT = """
-You are an AI assistant.
+MODEL_NAME = "llama-3.3-70b-versatile"
 
-Answer only using the provided context.
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-If the answer is not in the context, say
+CHUNK_SIZE = 1000
 
-"I don't know based on the uploaded document."
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
+CHUNK_OVERLAP = 200
