@@ -1,9 +1,9 @@
-
 import streamlit as st
 
 from utils import read_pdf
 
 from rag import create_vector_store, ask_question
+
 
 st.set_page_config(
     page_title="Advanced RAG",
