@@ -1,4 +1,3 @@
-
 PROMPT = """
 You are an AI assistant.
 
