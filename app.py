@@ -1,49 +1,67 @@
-import streamlit as st
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from utils import read_pdf
+from langchain_community.vectorstores import FAISS
 
-from rag import create_vector_store, ask_question
+from langchain_huggingface import HuggingFaceEmbeddings
+
+from langchain_groq import ChatGroq
+
+from langchain_core.prompts import PromptTemplate
+
+from config import *
+
+from prompt import PROMPT
 
 
-st.set_page_config(
-    page_title="Advanced RAG",
-    layout="wide"
+embeddings = HuggingFaceEmbeddings(
+    model_name=EMBEDDING_MODEL
 )
 
-st.title("📚 Advanced RAG Chatbot")
-
-pdf = st.file_uploader(
-    "Upload PDF",
-    type="pdf"
+llm = ChatGroq(
+    model=MODEL_NAME
 )
 
-if pdf:
+prompt = PromptTemplate(
+    input_variables=["context","question"],
+    template=PROMPT
+)
 
-    with st.spinner("Reading PDF..."):
 
-        text = read_pdf(pdf)
+def create_vector_store(text):
 
-        db = create_vector_store(text)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP
+    )
 
-    st.success("Vector Database Created")
+    chunks = splitter.split_text(text)
 
-    question = st.chat_input("Ask Question")
+    db = FAISS.from_texts(
+        chunks,
+        embeddings
+    )
 
-    if question:
+    return db
 
-        answer, docs = ask_question(
-            db,
-            question
-        )
 
-        st.chat_message("user").write(question)
+def ask_question(db, question):
 
-        st.chat_message("assistant").write(answer)
+    docs = db.similarity_search(
+        question,
+        k=TOP_K
+    )
 
-        with st.expander("Retrieved Chunks"):
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
 
-            for i, doc in enumerate(docs):
+    chain = prompt | llm
 
-                st.write(f"Chunk {i+1}")
+    answer = chain.invoke(
+        {
+            "context":context,
+            "question":question
+        }
+    )
 
-                st.write(doc.page_content)
+    return answer.content, docs
